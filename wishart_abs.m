@@ -26,6 +26,8 @@ MSE_data(:,1) = allN;
 MSE_errdata = zeros(size(allN,2), (n_x)^2+1);
 MSE_errdata(:,1) = allN;
 
+[TrueA, Truebeta_crit] = gib_optimize(sigma_X,sigma_Y,sigma_XY,beta);
+
 for n = 1:size(allN,2);
     Data = sample_wishart(sigma_X, sigma_Y, sigma_XY, beta, allN(n), m);
 
@@ -52,10 +54,10 @@ for n = 1:size(allN,2);
         % Plot this information in a histogram
         % OR
         % Calculate mean square error and error bars
-        this_mse = (expVal-trueVal).^2;
-        this_mse = abs(expVal-trueVal);
-        MSE_data(n,k+1) = sum(this_mse)/m;
-        MSE_errdata(n,k+1) = std(this_mse)/sqrt(m);
+        % this_mse = (expVal-trueVal).^2;
+        this_abs = abs(expVal-trueVal)./abs(trueVal);
+        MSE_data(n,k+1) = sum(this_abs)/m;
+        MSE_errdata(n,k+1) = std(this_abs)/sqrt(m);
     end
 end
 
@@ -63,12 +65,36 @@ end
 for k = 1:2
     figure;
     errorbar(MSE_data(:,1),MSE_data(:,k+1),MSE_errdata(:,k+1));
-    str = sprintf('Error of estimates of %dth element of projection matrix with %d samples',k,m);
+    axis([0 1.05*allN(end) 0 1.05*max(MSE_data(:,k+1))]);
+    hold on;
+    % plot([allN(1) allN(end)],[TrueA(1,k) TrueA(1,k)]);
+    
+    if(k==1)
+        str = sprintf('Error of estimates of %dst element of projection matrix with %d samples',k,m);
+    elseif(k==2)
+        str = sprintf('Error of estimates of %dnd element of projection matrix with %d samples',k,m);
+    elseif(k==3)
+        str = sprintf('Error of estimates of %drd element of projection matrix with %d samples',k,m);
+    else
+        str = sprintf('Error of estimates of %dth element of projection matrix with %d samples',k,m);
+    end
     title(str);
-    str = sprintf('mean square error of estimated value of %dth element of A', k);
+    
+    if (k==1)
+        str = sprintf('percent error of estimated value of %dst element of A', k);
+    elseif(k==2)
+        str = sprintf('percent error of estimated value of %dnd element of A', k);
+    elseif(k==3)
+        str = sprintf('percent error of estimated value of %drd element of A', k);
+    else
+        str = sprintf('percent error of estimated value of %dth element of A', k);
+    end
     ylabel(str);
     xlabel('number of initial data points given');
-    str = sprintf('mse_%dth_%dsamples.png',k,m);
+    str = sprintf('perc_%dth_%dsamples.png',k,m);
     print('-dpng', str);
+    
+    hold off;
 end
+
 

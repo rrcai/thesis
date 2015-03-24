@@ -10,6 +10,7 @@ n_x = size(sigma_X,1);
 % Find left eigenvectors of the relevant matrix. 
 sigma_XcondY = sigma_X-sigma_XY*inv(sigma_Y)*sigma_XY';
 B = sigma_XcondY/sigma_X;
+
 % Requires MATLAB R2014b
 [V,eval,evec] = eig(B);
 
@@ -34,9 +35,8 @@ for i=1:max_index
     r = sortEvec(:,i)'*sigma_X*sortEvec(:,i);
     % calculate alpha
     alpha = sqrt((beta*(1-sortEval(i,i))-1)/sortEval(i,i)*r);
-    A(:,i) = alpha.*sortEvec(:,i);
+    A(i,:) = alpha.*sortEvec(:,i)';
 end
-A = A';
 
 end
 

@@ -24,6 +24,9 @@ for i = 1:m
     [A, beta_crit] = gib_optimize(W(1:n_x,1:n_x),...
         W(n_x+1:n_x+n_y,n_x+1:n_x+n_y), W(1:n_x,n_x+1:n_x+n_y),...
         beta);
+    if(sign(A(1,1))~=sign(TrueA(1,1)))
+        A = -1*A;
+    end
     Data{i+1,1} = W;
     Data{i+1,2} = A;
     Data{i+1,3} = beta_crit;
