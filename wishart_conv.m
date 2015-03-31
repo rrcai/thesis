@@ -18,13 +18,14 @@ beta = 100;
 % Choose m (number of times to sample the Wishart distribution).
 m = 500;
 % Choose variety of n values (number of data points available).
-allN = 5*(5:1000);
+allN = 10*(50:1000);
 
 % Set up array to store values. 
-Conv_data = zeros(size(allN,2), (n_x)^2+1);
-Conv_data(:,1) = allN;
-Conv_errdata = zeros(size(allN,2), (n_x)^2+1);
-Conv_errdata(:,1) = allN;
+ConvLin_data = zeros(size(allN,2)-1, (n_x)+1);
+ConvLin_data(:,1) = allN(1:end-1);
+ConvQuad_data = zeros(size(allN,2)-1, (n_x)+1);
+ConvQuad_data(:,1) = allN(1:end-1);
+EstA_data = zeros(size(allN,2), n_x+1);
 
 [TrueA, Truebeta_crit] = gib_optimize(sigma_X,sigma_Y,sigma_XY,beta);
 
@@ -41,7 +42,7 @@ for n = 1:size(allN,2);
     trueVal = Truebeta_crit(1,1);
     
     % A will always be n_x by n_x. 
-    for k = 1:4
+    for k = 1:2
         % For this element of A and this value of n, find the mean 
         % square error. 
         row = -rem(ceil(k/2),2)+2*(1:(m+1));
@@ -58,44 +59,55 @@ for n = 1:size(allN,2);
         
         indices = logical(thisBetacritData < beta);
         
-        this_mse = (thisAData(indices)-trueVal).^2;
-        Conv_data(n,k+1) = sum(this_mse(2:end))/size(this_mse,1);
-        Conv_errdata(n,k+1) = std(this_mse(2:end))/sqrt(size(this_mse,1));
-    end
+        EstA_data(n,k+1) = sum(thisAData(indices))/sum(indices);
+   end
 end
 
-MSE_conv = Conv_data(2:end,2:3)./(Conv_data(1:end-1,2:3));
-scatter(Conv_data(2:5:end,1), MSE_conv(1:5:end,1));
-lsline;
-title('Sequence of Q-rates of convergence for A_{11}');
+ConvLin_data(:,2) = (EstA_data(2:end,2)-TrueA(1,1))./(EstA_data(1:end-1,2)-TrueA(1,1));
+ConvLin_data(:,3) = (EstA_data(2:end,3)-TrueA(1,2))./(EstA_data(1:end-1,3)-TrueA(1,2));
+ConvQuad_data(:,2) = (EstA_data(2:end,2)-TrueA(1,1))./((EstA_data(1:end-1,2)-TrueA(1,1)).^2);
+ConvQuad_data(:,3) = (EstA_data(2:end,3)-TrueA(1,2))./((EstA_data(1:end-1,3)-TrueA(1,2)).^2);
+scatter(ConvLin_data(2:5:end,1), ConvLin_data(2:5:end,2));
+hold on;
+h = lsline;
+scatter(ConvLin_data(2:5:end,1), ConvLin_data(2:5:end,3));
+% plot([min(ConvLin_data(:,1)) max(ConvLin_data(:,1))],[TrueA(1,1) TrueA(1,1)]);
+legend('scatterplot of q-ratios for A_{11}','scatterplot of q-ratios for A_{12}');
+title('Sequence of Q-rates of convergence for A_{11} and A_{12}');
 xlabel('number of data points observed');
 ylabel('(linear) convergence ratio');
 str = sprintf('conv_lin_11_%dsamples_sym.png',m);
 print('-dpng', str);
+hold off;
+
+% figure;
+% scatter(ConvLin_data(2:5:end,1), ConvLin_data(2:5:end,3));
+% hold on;
+% h = lsline;
+% set(h,'LineWidth',3);
+% % plot([min(ConvLin_data(:,1)) max(ConvLin_data(:,1))],[TrueA(1,2) TrueA(1,2)]);
+% legend('scatterplot of q-ratios','linear regression','true value of A_{12}');
+% % repn = repmat(MSE_data(2:10:end,1),2,1);
+% % repconv = [MSE_conv(1:10:end,1); MSE_conv(1:10:end,2)];
+% % k1 = convhull(MSE_data(2:end,1),MSE_conv(1:end,1));
+% % k2 = convhull(MSE_data(2:end,1),MSE_conv(1:end,2));
+% % plot(MSE_data(k1(2:end/2),1),MSE_conv(k1(2:end/2),1),'r-');
+% % plot(MSE_data(k2(2:end/2),1),MSE_conv(k2(2:end/2),2),'g-');
+% title('Sequence of linear Q-rates of convergence for A_{12}');
+% xlabel('number of data points observed');
+% ylabel('(linear) convergence ratio');
+% str = sprintf('conv_lin_12_%dsamples_sym.png',m);
+% print('-dpng', str);
 
 figure;
-scatter(Conv_data(2:5:end,1), MSE_conv(1:5:end,2));
-lsline;
-% repn = repmat(MSE_data(2:10:end,1),2,1);
-% repconv = [MSE_conv(1:10:end,1); MSE_conv(1:10:end,2)];
-% k1 = convhull(MSE_data(2:end,1),MSE_conv(1:end,1));
-% k2 = convhull(MSE_data(2:end,1),MSE_conv(1:end,2));
-% plot(MSE_data(k1(2:end/2),1),MSE_conv(k1(2:end/2),1),'r-');
-% plot(MSE_data(k2(2:end/2),1),MSE_conv(k2(2:end/2),2),'g-');
-title('Sequence of Q-rates of convergence for A_{12}');
-xlabel('number of data points observed');
-ylabel('(linear) convergence ratio');
-str = sprintf('conv_lin_12_%dsamples_sym.png',m);
-print('-dpng', str);
-
-figure;
-MSE_conv2 = Conv_data(2:end,2:3)./((Conv_data(1:end-1,2:3)).^2);
-scatter(Conv_data(2:5:end,1), MSE_conv2(1:5:end,1));
+scatter(ConvQuad_data(2:5:end,1), ConvQuad_data(2:5:end,2));
 hold on;
-scatter(Conv_data(2:5:end,1), MSE_conv2(1:5:end,2));
-title('Sequence of Q-rates of convergence');
+% plot([min(ConvLin_data(:,1)) max(ConvLin_data(:,1))],[TrueA(1,1) TrueA(1,1)]);
+scatter(ConvQuad_data(2:5:end,1), ConvQuad_data(2:5:end,3));
+title('Sequence of quadratic Q-rate of convergence for A_{11} and A_{12}');
 xlabel('number of data points observed');
 ylabel('(quadratic) convergence ratio');
 legend('A_{11}','A_{12}');
 str = sprintf('conv_quad_%dsamples_sym.png',m);
 print('-dpng', str);
+hold off;
