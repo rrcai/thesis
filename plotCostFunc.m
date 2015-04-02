@@ -1,19 +1,6 @@
-clear all;
-close all;
-
-n_x = 2;
-n_y = 1;
-sigma_X = [1 0.5; 0.5 2];
-sigma_y = 1;
-sigma_Y = sigma_y*eye(n_y);
-sigma_XY = [0.1; 0.2];
-
-% Choose beta.
-allBeta = 10*(1:500);
-% Choose m (number of times to sample the Wishart distribution).
-m = 500;
-% Choose one n value (number of data points available).
-n = 1000;
+function [ IC_data, IC_errdata ] = plotCostFunc( sigma_X, sigma_Y, sigma_XY, ...
+    allBeta, m, n, plotTitle )
+%plotCostFunc plots the information curve. 
 
 % Set up array to store values. 
 % Column 1: beta
@@ -36,8 +23,6 @@ for betaIndex = 1:size(allBeta,2);
     Data = sample_wishart(sigma_X, sigma_Y, sigma_XY, beta, n, m);
 
     % Find values of W, A, and beta crit.
-    allW = cell2mat(Data(:,1));
-    allA = cell2mat(Data(:,2));
     allBeta_crit = cell2mat(Data(:,3));
     
     indices = (((1:(size(allBeta_crit,1)/2)).*2)-1)';
@@ -101,7 +86,10 @@ str = 'Information curve error bars';
 title(str);
 ylabel('I(T;Y)');
 xlabel('I(X;T)');
-str = sprintf('infoCurve_%dn_%dm_nosym.png',n,m);
+str = sprintf('%s_%dn_%dm.png',plotTitle,n,m);
 print('-dpng', str);
 
 hold off;
+
+end
+
