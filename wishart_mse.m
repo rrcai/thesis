@@ -20,7 +20,8 @@ beta = 100;
 % Choose m (number of times to sample the Wishart distribution).
 m = 500;
 % Choose variety of n values (number of data points available).
-allN = 10*(50:500);
+% allN = 10*(5:500);
+allN = 100*(10:10000);
 
 % Set up array to store values. 
 beta_data = zeros(size(allN,2), 3);
@@ -105,8 +106,8 @@ end
 % title(str);
 % ylabel('percent of degenerate solutions');
 % xlabel('number of initial data points given');
-% str = sprintf('beta_failure_%dsamples_largeN.png',m);
-% % print('-dpng', str);
+% str = sprintf('beta_failure_%dsamples_largeN_nosym.png',m);
+% print('-dpng', str);
 
 % % Plot the error in the estimates of beta. 
 % figure;
@@ -115,8 +116,8 @@ end
 % title(str);
 % ylabel('percent error estimated value of {\\beta_1}^c');
 % xlabel('number of initial data points given');
-% str = sprintf('beta_perc_%dsamples_%dminN_%dmaxN_largeN.png',m,min(allN),max(allN));
-% % print('-dpng', str);
+% str = sprintf('beta_perc_%dsamples_%dminN_%dmaxN_largeN_nosym.png',m,min(allN),max(allN));
+% print('-dpng', str);
 
 % Plot this data. 
 for k = 1:2
@@ -155,7 +156,7 @@ for k = 1:2
 %     ylabel(ax(2),'percent of degenerate solutions');
         
     xlabel('number of initial data points given');
-    str = sprintf('mse_filtered_%dth_%dsamples_%dminN_%dmaxN_sym.png',k,m,min(allN),allN(end));
+    str = sprintf('mse_filtered_%dth_%dsamples_%dminN_%dmaxN_nosym.png',k,m,min(allN),allN(end));
     print('-dpng', str);
     
     hold off;
@@ -195,7 +196,7 @@ for k = 1:2
 %     ylabel(ax(2),'percent of degenerate solutions');
     
     xlabel('number of initial data points given');
-    str = sprintf('perc_filtered_%dth_%dsamples_%dminN_%dmaxN_sym.png',k,m,min(allN),allN(end));
+    str = sprintf('perc_filtered_%dth_%dsamples_%dminN_%dmaxN_nosym.png',k,m,min(allN),allN(end));
     print('-dpng', str);
 end
 

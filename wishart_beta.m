@@ -15,14 +15,14 @@ sigma_X = sigma_x*eye(n_x);
 sigma_Y = sigma_y*eye(n_y);
 sigma_XY = [0.1; 0.2];
 
-% sigma_X = [1 0.5; 0.5 2];
+sigma_X = [1 0.5; 0.5 2];
 
 % Choose beta.
 beta = 100;
 % Choose m (number of times to sample the Wishart distribution).
 m = 500;
 % Choose variety of n values (number of data points available).
-allN = 10*(50:500);
+allN = 100*(10:10000);
 
 % Set up array to store values.
 MSE_data = zeros(size(allN,2),4);
@@ -61,23 +61,24 @@ toc;
 
 % Plot this data.
 figure;
-h = errorbar(MSE_data(:,1),MSE_data(:,2),MSE_errdata(:,2));
-% set(get(h,'Parent'), 'XScale', 'log');
-% axis tight;
+h = errorbar(MSE_data(1:end,1),MSE_data(1:end,2),MSE_errdata(1:end,2));
+% ylim([0 max(MSE_data(91:end,2))*1.2]);
+set(get(h,'Parent'), 'XScale', 'log');
+axis tight;
 str = sprintf('Error of estimates of {\\beta_1}^c with %d samples',m);
 title(str);
 str = sprintf('percent error of estimated value of {\\beta_1}^c');
 ylabel(str);
 xlabel('number of initial data points given');
-str = sprintf('beta_perc_%dsamples_%dminN_%dmaxN_sym.png',m,min(allN),max(allN));
+str = sprintf('beta_perc_%dsamples_%dminN_%dmaxN_nosym.png',m,min(allN),max(allN));
 print('-dpng', str);
 
 % Plot this data.
 figure;
 h = errorbar(MSE_data(:,1),MSE_data(:,3),MSE_errdata(:,3));
 hold on;
-% set(get(h,'Parent'), 'XScale', 'log');
-% axis tight;
+set(get(h,'Parent'), 'XScale', 'log');
+axis tight;
 plot([allN(1) allN(end)],[Truebeta_crit(1,1) Truebeta_crit(1,1)]);
 legend('mean square error', 'true {\beta_1}^c value');
 str = sprintf('Error of estimates of {\\beta_1}^c with %d samples',m);
@@ -85,7 +86,7 @@ title(str);
 str = sprintf('mean square error of estimated value of {\\beta_1}^c');
 ylabel(str);
 xlabel('number of initial data points given');
-str = sprintf('beta_mse_%dsamples_%dminN_%dmaxN_sym.png',m,min(allN),max(allN));
+str = sprintf('beta_mse_%dsamples_%dminN_%dmaxN_nosym.png',m,min(allN),max(allN));
 print('-dpng', str);
 hold off;
 
@@ -102,9 +103,6 @@ title(str);
 str = sprintf('percent of estimated {\\beta_1}^c larger than true value');
 ylabel(str);
 xlabel('number of initial data points given');
-str = sprintf('beta_overage_%dsamples_%dminN_%dmaxN_sym.png',m,min(allN),max(allN));
+str = sprintf('beta_overage_%dsamples_%dminN_%dmaxN_nosym.png',m,min(allN),max(allN));
 print('-dpng', str);
 hold off;
-
-testlogic = logical(MSE_data(:,4)<0.5);
-testlogic = sum(testlogic)/size(testlogic,1);
