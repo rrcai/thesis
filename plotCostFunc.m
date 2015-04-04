@@ -1,5 +1,5 @@
 function [ IC_data, IC_errdata ] = plotCostFunc( sigma_X, sigma_Y, sigma_XY, ...
-    allBeta, m, n, plotTitle )
+    allBeta, m, n )
 %plotCostFunc plots the information curve. 
 
 % Set up array to store values. 
@@ -74,22 +74,6 @@ for betaIndex = 1:size(allBeta,2);
     IC_errdata(betaIndex,3) = std(expFutureInfo)/sqrt(size(expFutureInfo,1));
     
 end
-
-% Plot true information curve. 
-figure;
-plot(IC_data(:,2), IC_data(:,3));
-hold on;
-errorbar(IC_data(:,4),IC_data(:,5),IC_errdata(:,3),'.k');
-herrorbar(IC_data(:,4),IC_data(:,5),IC_errdata(:,2),'.k');
-legend('true information curve', 'estimated information curve');
-str = 'Information curve error bars';
-title(str);
-ylabel('I(T;Y)');
-xlabel('I(X;T)');
-str = sprintf('%s_%dn_%dm.png',plotTitle,n,m);
-print('-dpng', str);
-
-hold off;
 
 end
 
