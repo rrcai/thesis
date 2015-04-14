@@ -6,7 +6,7 @@ clear all;
 %% Generate plots for information curve. 
 tic;
 
-% Non-symmetric Sigma_X
+% Non-diagonal Sigma_X
 n_x = 2;
 n_y = 1;
 sigma_X = [1 0.5; 0.5 2];
@@ -22,32 +22,105 @@ m = 500;
 % Choose one n value (number of data points available).
 n = 5000;
 
-disp('running IC nosym\n');
+disp('running IC nodiag\n');
 [IC_data_nosym, IC_errdata_nosym] = plotCostFunc(sigma_X,sigma_Y, ...
     sigma_XY, allBeta, m, n );
 
-% Symmetric Sigma_X
+% diagonal Sigma_X
 sigma_x = 1;
 sigma_X = sigma_x*eye(n_x);
-disp('running IC sym\n');
+disp('running IC diag\n');
 [IC_data_sym, IC_errdata_sym] = plotCostFunc(sigma_X,sigma_Y, ...
     sigma_XY, allBeta, m, n );
+
+IC_perc_error_sym = zeros(size(IC_data_sym,1),3);
+IC_perc_error_nosym = zeros(size(IC_data_nosym,1),3);
+
+IC_perc_error_sym(:,1) = allBeta;
+IC_perc_error_nosym(:,1) = allBeta;
+
+IC_perc_error_sym(:,2) = abs((IC_data_sym(:,4)-IC_data_sym(:,2))./IC_data_sym(:,2));
+IC_perc_error_sym(:,3) = abs((IC_data_sym(:,5)-IC_data_sym(:,3))./IC_data_sym(:,3));
+
+IC_perc_error_nosym(:,2) = abs((IC_data_nosym(:,4)-IC_data_nosym(:,2))./IC_data_sym(:,2));
+IC_perc_error_nosym(:,3) = abs((IC_data_nosym(:,5)-IC_data_nosym(:,3))./IC_data_nosym(:,3));
+
+% Plot percent errors.
+figure;
+hold on;
+h1 = scatter(IC_perc_error_sym(21:end,1),IC_perc_error_sym(21:end,2)); %past
+h3 = plot([allBeta(21) allBeta(end)], [mean(IC_perc_error_sym(21:end,2)) mean(IC_perc_error_sym(21:end,2))]);
+h2 = scatter(IC_perc_error_sym(21:end,1),IC_perc_error_sym(21:end,3)); %future
+h4 = plot([allBeta(21) allBeta(end)], [mean(IC_perc_error_sym(21:end,3)) mean(IC_perc_error_sym(21:end,3))]);
+legend([h1 h2 h3 h4], {'percent error in past information','percent error in future information',...
+    'mean percent error in past information','mean percent error in future information'});
+xlabel('{\beta}');
+ylabel('percent error');
+title('Percent error of past and future information for diagonal {\Sigma}_x');
+hold off;
+filestr = 'percErrInfoCurveDiag';
+print('-dpng',filestr);
+
+figure;
+hold on;
+h1 = scatter(IC_perc_error_nosym(44:end,1),IC_perc_error_nosym(44:end,2)); %past
+h2 = scatter(IC_perc_error_nosym(44:end,1),IC_perc_error_nosym(44:end,3)); %future
+legend([h1 h2], {'percent error in past information','percent error in future information'});
+xlabel('{\beta}');
+ylabel('percent error');
+title('Percent error of past and future information for non-diagonal {\Sigma}_x');
+hold off;
+filestr = 'percErrInfoCurveNoDiag';
+print('-dpng',filestr);
+
+% Histogram of percent errors? 
+figure; 
+h1 = histogram(IC_perc_error_sym(21:end,2),40);
+h = findobj(gca,'Type','patch');
+set(h,'FaceColor','r','EdgeColor','w','facealpha',0.75);
+hold on;
+h3 = histogram(IC_perc_error_nosym(50:end,2),40);
+h = findobj(gca,'Type','patch');
+set(h,'facealpha',0.75);
+ylabel('frequency of percent error');
+xlabelstr = 'percent error in past information';
+xlabel(xlabelstr)
+legend([h1 h3], {'diagonal {\Sigma}_x','non-diagonal {\Sigma}_x'});
+titlestr = sprintf('Frequency of percent error in past information');
+title(titlestr);
+str = sprintf('pastInfoErr_hist_%dsamples.png',m);
+print('-dpng', str);
+hold off;
+
+figure; 
+h1 = histogram(IC_perc_error_sym(21:end,3),30);
+h = findobj(gca,'Type','patch');
+set(h,'FaceColor','r','EdgeColor','w','facealpha',0.75);
+hold on;
+h3 = histogram(IC_perc_error_nosym(50:end,3),40);
+h = findobj(gca,'Type','patch');
+set(h,'facealpha',0.75);
+ylabel('frequency of percent error');
+xlabelstr = 'percent error in future information';
+xlabel(xlabelstr)
+legend([h1 h3], {'diagonal {\Sigma}_x','non-diagonal {\Sigma}_x'});
+titlestr = sprintf('Frequency of percent error in future information');
+title(titlestr);
+str = sprintf('futureInfoErr_hist_%dsamples.png',m);
+print('-dpng', str);
+hold off;
 
 % Plot "scatterplot" information curve for the non-sym case and sym case. 
 figure;
 hold on;
 h1 = plot(IC_data_nosym(:,2), IC_data_nosym(:,3),'k');
 h2 = scatter(IC_data_nosym(:,4),IC_data_nosym(:,5));
-% h2 = errorbar(IC_data_nosym(:,4),IC_data_nosym(:,5),IC_errdata_nosym(:,3),'.g');
-% h3 = herrorbar(IC_data_nosym(:,4),IC_data_nosym(:,5),IC_errdata_nosym(:,2),'.g');
 h4 = plot(IC_data_sym(:,2), IC_data_sym(:,3),'b');
 h5 = scatter(IC_data_sym(:,4),IC_data_sym(:,5));
-% h5 = errorbar(IC_data_sym(:,4),IC_data_sym(:,5),IC_errdata_sym(:,3),'.m');
-% h6 = herrorbar(IC_data_sym(:,4),IC_data_sym(:,5),IC_errdata_sym(:,2),'.m');
-legend([h1 h2 h4 h5], {'true information curve for non-symmetric {\Sigma}_x', ...
-    'estimated information curve for non-symmetric {\Sigma}_x',...
-    'true information curve for symmetric {\Sigma}_x', ...
-    'estimated information curve for symmetric {\Sigma}_x'});
+legend([h1 h2 h4 h5], {'true information curve for non-diagonal {\Sigma}_x', ...
+    'estimated information curve for non-diagonal {\Sigma}_x',...
+    'true information curve for diagonal {\Sigma}_x', ...
+    'estimated information curve for diagonal {\Sigma}_x'});
 str = 'Information curve error bars';
 yl = get(gca, 'ylim');
 yl(1) = 0;
@@ -68,10 +141,8 @@ figure;
 hold on;
 h4 = plot(IC_data_sym(:,2), IC_data_sym(:,3),'b');
 h5 = scatter(IC_data_sym(:,4),IC_data_sym(:,5));
-% h5 = errorbar(IC_data_sym(:,4),IC_data_sym(:,5),IC_errdata_sym(:,3),'.m');
-% h6 = herrorbar(IC_data_sym(:,4),IC_data_sym(:,5),IC_errdata_sym(:,2),'.m');
 legend([h4 h5], {'true information curve', 'estimated information curve'});
-str = 'Information curve error bars for symmetric {\Sigma}_x';
+str = 'Information curve error bars for diagonal {\Sigma}_x';
 title(str);
 ylabel('I(T;Y)');
 xlabel('I(X;T)');
@@ -81,7 +152,7 @@ ylim(yl);
 xl = get(gca, 'xlim');
 xl(1) = 0;
 xlim(xl);
-str = sprintf('%s_%dminBeta_%dmaxBeta_%dn_%dm.png','infoCurve_sym',min(allBeta),...
+str = sprintf('%s_%dminBeta_%dmaxBeta_%dn_%dm.png','infoCurve_diag',min(allBeta),...
     max(allBeta),n,m);
 print('-dpng', str);
 hold off;
@@ -101,11 +172,11 @@ xl = get(gca, 'xlim');
 xl(1) = 0;
 xlim(xl);
 legend([h4 h5], {'true information curve', 'estimated information curve'});
-str = 'Information curve error bars for symmetric {\Sigma}_x';
+str = 'Information curve error bars for diagonal {\Sigma}_x';
 title(str);
 ylabel('I(T;Y)');
 xlabel('I(X;T)');
-str = sprintf('%s_withBars_%dminBeta_%dmaxBeta_%dn_%dm.png','infoCurve_sym',...
+str = sprintf('%s_withBars_%dminBeta_%dmaxBeta_%dn_%dm.png','infoCurve_diag',...
     min(allBeta),max(allBeta),n,m);
 print('-dpng', str);
 hold off;
@@ -115,10 +186,8 @@ figure;
 hold on;
 h4 = plot(IC_data_nosym(:,2), IC_data_nosym(:,3),'b');
 h5 = scatter(IC_data_nosym(:,4),IC_data_nosym(:,5));
-% h5 = errorbar(IC_data_nosym(:,4),IC_data_nosym(:,5),IC_errdata_nosym(:,3),'.m');
-% h6 = herrorbar(IC_data_nosym(:,4),IC_data_nosym(:,5),IC_errdata_nosym(:,2),'.m');
 legend([h4 h5], {'true information curve', 'estimated information curve'});
-str = 'Information curve error bars for non-symmetric {\Sigma}_x';
+str = 'Information curve error bars for non-diagonal {\Sigma}_x';
 title(str);
 ylabel('I(T;Y)');
 xlabel('I(X;T)');
@@ -128,12 +197,12 @@ ylim(yl);
 xl = get(gca, 'xlim');
 xl(1) = 0;
 xlim(xl);
-str = sprintf('%s_%dminBeta_%dmaxBeta_%dn_%dm.png','infoCurve_nosym',min(allBeta),...
+str = sprintf('%s_%dminBeta_%dmaxBeta_%dn_%dm.png','infoCurve_nodiag',min(allBeta),...
     max(allBeta),n,m);
 print('-dpng', str);
 hold off;
 
-% Plot for just non-symmetric with bars
+% Plot for just non-diagonal with bars
 figure;
 hold on;
 h1 = plot(IC_data_nosym(:,2), IC_data_nosym(:,3),'k');
@@ -142,7 +211,7 @@ testx = [IC_data_nosym(:,2) IC_data_nosym(:,4)];
 testy = [IC_data_nosym(:,3) IC_data_nosym(:,5)];
 h3 = plot(testx', testy');
 legend([h1 h2], {'true information curve', 'estimated information curve'});
-str = 'Information curve error bars for non-symmetric {\Sigma}_x';
+str = 'Information curve error bars for non-diagonal {\Sigma}_x';
 title(str);
 ylabel('I(T;Y)');
 xlabel('I(X;T)');
@@ -152,7 +221,7 @@ ylim(yl);
 xl = get(gca, 'xlim');
 xl(1) = 0;
 xlim(xl);
-str = sprintf('%s_withBars_%dminBeta_%dmaxBeta_%dn_%dm.png','infoCurve_nosym',...
+str = sprintf('%s_withBars_%dminBeta_%dmaxBeta_%dn_%dm.png','infoCurve_nodiag',...
     min(allBeta),max(allBeta),n,m);
 print('-dpng', str);
 hold off;
@@ -165,7 +234,7 @@ beta = 100;
 % Choose m (number of times to sample the Wishart distribution).
 m = 500;
 % Choose variety of n values (number of data points available).
-allN = 100*(50:1000);
+allN = logspace(3,6,900);
 
 n_x = 2;
 n_y = 1;
@@ -200,7 +269,7 @@ h2 = errorbar(Beta_data_nosym(1:end,1),Beta_data_nosym(1:end,2),...
     Beta_errdata_nosym(1:end,2));
 set(get(h1,'Parent'), 'XScale', 'log');
 axis tight;
-legend('error for symmetric {\Sigma}_x','error for non-symmetric {\Sigma}_x');
+legend('error for diagonal {\Sigma}_x','error for non-diagonal {\Sigma}_x');
 str = sprintf('Error of estimates of {\\beta_1}^c with %d samples',m);
 title(str);
 str = sprintf('percent error of estimated value of {\\beta_1}^c');
@@ -220,10 +289,10 @@ h2 = errorbar(Beta_data_nosym(:,1),Beta_data_nosym(:,3),Beta_errdata_nosym(:,3))
 set(get(h1,'Parent'), 'XScale', 'log');
 axis tight;
 plot([allN(1) allN(end)],[Truebeta_crit_nosym(1,1) Truebeta_crit_nosym(1,1)]);
-legend('mean square error for symmetric {\Sigma}_x', ...
-    'true {\beta_1}^c value for symmetric {\Sigma}_x',...
-    'mean square error for non-symmetric {\Sigma}_x',...
-    'true {\beta_1}^c value for non-symmetric {\Sigma}_x');
+legend('mean square error for diagonal {\Sigma}_x', ...
+    'true {\beta_1}^c value for diagonal {\Sigma}_x',...
+    'mean square error for non-diagonal {\Sigma}_x',...
+    'true {\beta_1}^c value for non-diagonal {\Sigma}_x');
 str = sprintf('Error of estimates of {\\beta_1}^c with %d samples',m);
 title(str);
 str = sprintf('mean square error of estimated value of {\\beta_1}^c');
@@ -240,14 +309,14 @@ hold on;
 plot([allN(1) allN(end)],[Truebeta_crit_sym(1,1) Truebeta_crit_sym(1,1)]);
 set(get(h1,'Parent'), 'XScale', 'log');
 axis tight;
-legend('mean square error for symmetric {\Sigma}_x', ...
-    'true {\beta_1}^c value for symmetric {\Sigma}_x');
+legend('mean square error for diagonal {\Sigma}_x', ...
+    'true {\beta_1}^c value for diagonal {\Sigma}_x');
 str = sprintf('Error of estimates of {\\beta_1}^c with %d samples',m);
 title(str);
 str = sprintf('mean square error of estimated value of {\\beta_1}^c');
 ylabel(str);
 xlabel('number of initial data points given');
-str = sprintf('beta_mse_%dsamples_%dminN_%dmaxN_sym.png',m,min(allN),max(allN));
+str = sprintf('beta_mse_%dsamples_%dminN_%dmaxN_diag.png',m,min(allN),max(allN));
 print('-dpng', str);
 hold off;
 
@@ -258,8 +327,8 @@ h2 = errorbar(Beta_data_nosym(:,1),Beta_data_nosym(:,3),Beta_errdata_nosym(:,3))
 set(get(h2,'Parent'), 'XScale', 'log');
 axis tight;
 plot([allN(1) allN(end)],[Truebeta_crit_nosym(1,1) Truebeta_crit_nosym(1,1)]);
-legend('mean square error for non-symmetric {\Sigma}_x',...
-    'true {\beta_1}^c value for non-symmetric {\Sigma}_x');
+legend('mean square error for non-diagonal {\Sigma}_x',...
+    'true {\beta_1}^c value for non-diagonal {\Sigma}_x');
 str = sprintf('Error of estimates of {\\beta_1}^c with %d samples',m);
 title(str);
 str = sprintf('mean square error of estimated value of {\\beta_1}^c');
@@ -277,8 +346,8 @@ h2 = scatter(Beta_data_nosym(:,1),Beta_data_nosym(:,4));
 plot([allN(1) allN(end)],[0.5 0.5],'LineWidth',3);
 set(get(h1,'Parent'), 'XScale', 'log');
 axis tight;
-legend('frequency of overage for symmetric {\Sigma}_x', ...
-    'frequency of overage for non-symmetric {\Sigma}_x',...
+legend('frequency of overage for diagonal {\Sigma}_x', ...
+    'frequency of overage for non-diagonal {\Sigma}_x',...
     '50%');
 str = sprintf('Percent of {\\beta_1}^c larger than true {\\beta_1}^c with %d samples',m);
 title(str);
@@ -302,10 +371,10 @@ set(h,'facealpha',0.75);
 ylabel('frequency of overage in estimates');
 xlabelstr = sprintf('frequency across %d samples',m);
 xlabel(xlabelstr)
-legend([h1 h3], {'symmetric {\Sigma}_x','non-symmetric {\Sigma}_x'});
+legend([h1 h3], {'diagonal {\Sigma}_x','non-diagonal {\Sigma}_x'});
 titlestr = sprintf('Frequency of overage in errors of {\\beta_1}^c across n from %d to %d', min(allN),max(allN));
 title(titlestr);
-str = sprintf('beta_overage_%dsamples_%dminN_%dmaxN.png',m,min(allN),max(allN));
+str = sprintf('beta_overage_hist_%dsamples_%dminN_%dmaxN.png',m,min(allN),max(allN));
 print('-dpng', str);
 hold off;
 
@@ -331,13 +400,13 @@ sigma_y = 1;
 sigma_Y = sigma_y*eye(n_y);
 sigma_XY = [0.1; 0.2];
 
-disp('beta linear error no sym');
+disp('beta linear error no diag');
 [Beta_data_nosym, Beta_errdata_nosym] = plotBetaError(sigma_X,sigma_Y, ...
     sigma_XY, beta, m, allN );
 
 [TrueA, Truebeta_crit_nosym] = gib_optimize(sigma_X,sigma_Y,sigma_XY,beta);
 
-disp('beta linear error sym');
+disp('beta linear error diag');
 sigma_X = sigma_x*eye(n_x);
 [Beta_data_sym, Beta_errdata_sym] = plotBetaError(sigma_X,sigma_Y, ...
     sigma_XY, beta, m, allN );
@@ -353,8 +422,8 @@ h1 = errorbar(Beta_data_sym(1:end,1),Beta_data_sym(1:end,2),...
 hold on;
 h2 = errorbar(Beta_data_nosym(1:end,1),Beta_data_nosym(1:end,2),...
     Beta_errdata_nosym(1:end,2));
-% ylim([0 max(MSE_data(91:end,2))*1.2]);
-legend('error for symmetric {\Sigma}_x','error for non-symmetric {\Sigma}_x');
+ylim([0 max(Beta_data_nosym(1:end,2))*1.2]);
+legend('error for diagonal {\Sigma}_x','error for non-diagonal {\Sigma}_x');
 str = sprintf('Error of estimates of {\\beta_1}^c with %d samples',m);
 title(str);
 str = sprintf('percent error of estimated value of {\\beta_1}^c');
@@ -371,10 +440,10 @@ hold on;
 plot([allN(1) allN(end)],[Truebeta_crit_sym(1,1) Truebeta_crit_sym(1,1)]);
 h2 = errorbar(Beta_data_nosym(:,1),Beta_data_nosym(:,3),Beta_errdata_nosym(:,3));
 plot([allN(1) allN(end)],[Truebeta_crit_nosym(1,1) Truebeta_crit_nosym(1,1)]);
-legend('mean square error for symmetric {\Sigma}_x', ...
-    'true {\beta_1}^c value for symmetric {\Sigma}_x',...
-    'mean square error for non-symmetric {\Sigma}_x',...
-    'true {\beta_1}^c value for non-symmetric {\Sigma}_x');
+legend('mean square error for diagonal {\Sigma}_x', ...
+    'true {\beta_1}^c value for diagonal {\Sigma}_x',...
+    'mean square error for non-diagonal {\Sigma}_x',...
+    'true {\beta_1}^c value for non-diagonal {\Sigma}_x');
 str = sprintf('Error of estimates of {\\beta_1}^c with %d samples',m);
 title(str);
 str = sprintf('mean square error of estimated value of {\\beta_1}^c');
@@ -428,10 +497,10 @@ h4 = polyfit(Beta_data_nosym(:,1),Beta_data_nosym(:,4),1);
 h4 = polyval(h4,Beta_data_nosym(:,1));
 plot(Beta_data_nosym(:,1),h4);
 h5 = plot([allN(1) allN(end)],[0.5 0.5],'LineWidth',2);
-legend('frequency of overage for symmetric {\Sigma}_x', ...
-    'regression line for symmetric {\Sigma}_x',...
-    'frequency of overage for non-symmetric {\Sigma}_x',...
-    'regression line for non-symmetric {\Sigma}_x',...
+legend('frequency of overage for diagonal {\Sigma}_x', ...
+    'regression line for diagonal {\Sigma}_x',...
+    'frequency of overage for non-diagonal {\Sigma}_x',...
+    'regression line for non-diagonal {\Sigma}_x',...
     '50%','Location','southeast');
 str = sprintf('Percent of {\\beta_1}^c larger than true {\\beta_1}^c with %d samples',m);
 title(str);
@@ -455,7 +524,7 @@ set(h,'facealpha',0.75);
 ylabel('frequency of overage in estimates');
 xlabelstr = sprintf('frequency across %d samples',m);
 xlabel(xlabelstr);
-legend([h1 h2],{'symmetric {\Sigma}_x','non-symmetric {\Sigma}_x'});
+legend([h1 h2],{'diagonal {\Sigma}_x','non-diagonal {\Sigma}_x'});
 titlestr = sprintf('Frequency of overage in errors of {\\beta_1}^c across n from %d to %d', min(allN), max(allN));
 title(titlestr);
 str = sprintf('beta_overage_%dsamples_%dminN_%dmaxN.png',m,min(allN),max(allN));
@@ -477,17 +546,17 @@ beta = 100;
 % Choose m (number of times to sample the Wishart distribution).
 m = 500;
 % Choose variety of n values (number of data points available).
-allN = 100*(10:10000);
+allN = logspace(3,6,900);
 
 sigma_X = [1 0.5; 0.5 2];
-disp('A error analysis log nosym');
+disp('A error analysis log nodiag\n');
 [ MSE_data_nosym, MSE_errdata_nosym, ABS_data_nosym, ABS_errdata_nosym ] = plotAError( sigma_X, ...
     sigma_Y, sigma_XY, beta, m, allN);
 
 [TrueA_nosym, Truebeta_crit_nosym] = gib_optimize(sigma_X,sigma_Y,sigma_XY,beta);
 
 sigma_X = sigma_x*eye(n_x);
-disp('A error analysis log sym');
+disp('A error analysis log diag\n');
 [ MSE_data_sym, MSE_errdata_sym, ABS_data_sym, ABS_errdata_sym ] = plotAError( sigma_X, ...
     sigma_Y, sigma_XY, beta, m, allN);
 
@@ -505,7 +574,7 @@ str = 'Frequency of {\beta}_{1}^{c} greater than \beta';
 title(str);
 ylabel('percent of degenerate solutions');
 xlabel('number of initial data points given');
-legend('non-symmetric {\Sigma}_x','symmetric {\Sigma}_x');
+legend('non-diagonal {\Sigma}_x','diagonal {\Sigma}_x');
 str = sprintf('beta_failure_%dsamples_largeN.png',m);
 print('-dpng', str);
 hold off;
@@ -514,22 +583,22 @@ hold off;
 figure;
 h = semilogx(MSE_data_nosym(:,1), MSE_data_nosym(:,end));
 set(get(h,'Parent'), 'XScale', 'log');
-str = 'Frequency of {\beta}_{1}^{c} greater than \beta for non-symmetric {\Sigma}_x';
+str = 'Frequency of {\beta}_{1}^{c} greater than \beta for non-diagonal {\Sigma}_x';
 title(str);
 ylabel('percent of degenerate solutions');
 xlabel('number of initial data points given');
-str = sprintf('beta_failure_%dsamples_largeN_nosym.png',m);
+str = sprintf('beta_failure_%dsamples_largeN_nodiag.png',m);
 print('-dpng', str);
 hold off;
 
 figure;
 h = semilogx(MSE_data_sym(:,1), MSE_data_sym(:,end));
 set(get(h,'Parent'), 'XScale', 'log');
-str = 'Frequency of {\beta}_{1}^{c} greater than \beta for symmetric {\Sigma}_x';
+str = 'Frequency of {\beta}_{1}^{c} greater than \beta for diagonal {\Sigma}_x';
 title(str);
 ylabel('percent of degenerate solutions');
 xlabel('number of initial data points given');
-str = sprintf('beta_failure_%dsamples_largeN_sym.png',m);
+str = sprintf('beta_failure_%dsamples_largeN_diag.png',m);
 print('-dpng', str);
 hold off;
 
@@ -541,8 +610,8 @@ for k = 1:2
     h2 = plot([allN(1) allN(end)],[abs(TrueA_sym(1,k)) abs(TrueA_sym(1,k))]);
     h3 = errorbar(MSE_data_nosym(:,1), MSE_data_nosym(:,k+1),MSE_errdata_nosym(:,k+1));
     h4 = plot([allN(1) allN(end)],[abs(TrueA_nosym(1,k)) abs(TrueA_nosym(1,k))]);
-    legend('error for symmetric {\Sigma}_x', 'absolute value of true value for symmetric',...
-        'error for non-symmetric {\Sigma}_x', 'absolute value of true value for non-symmetric');
+    legend('error for diagonal {\Sigma}_x', 'absolute value of true value for diagonal',...
+        'error for non-diagonal {\Sigma}_x', 'absolute value of true value for non-diagonal');
     xlim([0 1.05*allN(end)]);
     set(get(h1,'Parent'), 'XScale', 'log');
                 
@@ -577,13 +646,13 @@ for k = 1:2
     h1 = errorbar(MSE_data_sym(:,1),MSE_data_sym(:,k+1),MSE_errdata_sym(:,k+1));
     hold on;
     h2 = plot([allN(1) allN(end)],[abs(TrueA_sym(1,k)) abs(TrueA_sym(1,k))]);
-    legend('error for symmetric {\Sigma}_x', 'absolute value of true value for symmetric');
+    legend('error for diagonal {\Sigma}_x', 'absolute value of true value for diagonal');
     xlim([0 1.05*allN(end)]);
     set(get(h1,'Parent'), 'XScale', 'log');
     title(titlestr);
     ylabel(ystr);
     xlabel('number of initial data points given');
-    filestr = sprintf('mse_filt_%dth_%dsamples_%dminN_%dmaxN_sym.png',k,m,min(allN),allN(end));
+    filestr = sprintf('mse_filt_%dth_%dsamples_%dminN_%dmaxN_diag.png',k,m,min(allN),allN(end));
     print('-dpng', filestr);
     hold off;
     
@@ -609,8 +678,8 @@ for k = 1:2
     h = errorbar(ABS_data_sym(:,1),ABS_data_sym(:,k+1),ABS_errdata_sym(:,k+1));
     hold on;
     h2 = errorbar(ABS_data_nosym(:,1),ABS_data_nosym(:,k+1),ABS_errdata_nosym(:,k+1));
-%     xlim([0 1.05*allN(end)]);
-    legend('error for symmetric {\Sigma}_x', 'error for non-symmetric {\Sigma}_x');
+    axis tight;
+    legend('error for diagonal {\Sigma}_x', 'error for non-diagonal {\Sigma}_x');
     set(get(h,'Parent'), 'XScale', 'log');
 
     if(k==1)
@@ -654,13 +723,13 @@ m = 500;
 allN = 10*(100:500);
 
 sigma_X = [1 0.5; 0.5 2];
-disp('A linear error no sym');
+disp('A linear error no diag\n');
 [ MSE_data_nosym, MSE_errdata_nosym, ABS_data_nosym, ABS_errdata_nosym ] = plotAError( sigma_X, ...
     sigma_Y, sigma_XY, beta, m, allN);
 
 [TrueA_nosym, Truebeta_crit_nosym] = gib_optimize(sigma_X,sigma_Y,sigma_XY,beta);
 
-disp('A linear error sym');
+disp('A linear error diag\n');
 sigma_X = sigma_x*eye(n_x);
 [ MSE_data_sym, MSE_errdata_sym, ABS_data_sym, ABS_errdata_sym ] = plotAError( sigma_X, ...
     sigma_Y, sigma_XY, beta, m, allN);
@@ -674,7 +743,7 @@ figure;
 plot(MSE_data_nosym(:,1), MSE_data_nosym(:,end));
 hold on;
 plot(MSE_data_sym(:,1), MSE_data_sym(:,end));
-legend('non-symmetric {\Sigma}_x', 'symmetric {\Sigma}_x');
+legend('non-diagonal {\Sigma}_x', 'diagonal {\Sigma}_x');
 str = 'Frequency of {\beta}_{1}^{c} greater than \beta';
 title(str);
 ylabel('percent of degenerate solutions');
@@ -691,8 +760,8 @@ for k = 1:2
     h2 = plot([allN(1) allN(end)],[abs(TrueA_sym(1,k)) abs(TrueA_sym(1,k))]);
     h3 = errorbar(MSE_data_nosym(:,1), MSE_data_nosym(:,k+1),MSE_errdata_nosym(:,k+1));
     h4 = plot([allN(1) allN(end)],[abs(TrueA_nosym(1,k)) abs(TrueA_nosym(1,k))]);
-    legend('error for symmetric {\Sigma}_x', 'absolute value of true value for symmetric',...
-        'error for non-symmetric {\Sigma}_x', 'absolute value of true value for non-symmetric');
+    legend('error for diagonal {\Sigma}_x', 'absolute value of true value for symmetric',...
+        'error for non-diagonal {\Sigma}_x', 'absolute value of true value for non-symmetric');
     xlim([0 1.05*allN(end)]);
                 
     if(k==1)
@@ -756,8 +825,9 @@ for k = 1:2
     h = errorbar(ABS_data_sym(:,1),ABS_data_sym(:,k+1),ABS_errdata_sym(:,k+1));
     hold on;
     h2 = errorbar(ABS_data_nosym(:,1),ABS_data_nosym(:,k+1),ABS_errdata_nosym(:,k+1));
-    legend('error for symmetric {\Sigma}_x', 'error for non-symmetric {\Sigma}_x');
-
+    legend('error for diagonal {\Sigma}_x', 'error for non-diagonal {\Sigma}_x');
+    ylim([0 max(ABS_data_nosym(:,1))*1.1]);
+    
     if(k==1)
         str = sprintf('Error of estimates of %dst element of projection matrix with %d samples',k,m);
     elseif(k==2)
@@ -816,7 +886,7 @@ scatter(FiltConvLin_data1(2:end,1), FiltConvLin_data1(2:end,2));
 hold on;
 scatter(FiltConvLin_data2(2:end,1), FiltConvLin_data2(2:end,2));
 legend('A_{11}','A_{12}');
-title('Filtered sequence of linear convergence rates for A_{11} and A_{12} for symmetric {\Sigma}_x');
+title('Filtered sequence of linear convergence rates for A_{11} and A_{12} for diagonal {\Sigma}_x');
 xlabel('number of data points observed');
 ylabel('(linear) convergence ratio');
 str = sprintf('conv_filt_lin_%dsamples_sym.png',m);
@@ -829,7 +899,7 @@ scatter(FiltConvQuad_data1(2:end,1), FiltConvQuad_data1(2:end,2));
 hold on;
 scatter(FiltConvQuad_data2(2:end,1), FiltConvQuad_data2(2:end,2));
 legend('A_{11}','A_{12}');
-title('Filtered sequence of quadratic convergence rates for A_{11} and A_{12} for symmetric {\Sigma}_x');
+title('Filtered sequence of quadratic convergence rates for A_{11} and A_{12} for diagonal {\Sigma}_x');
 xlabel('number of data points observed');
 ylabel('(quadratic) convergence ratio');
 str = sprintf('conv_filt_quad_%dsamples_sym.png',m);
@@ -841,7 +911,7 @@ scatter(ConvLin_data(2:end,1), ConvLin_data(2:end,2));
 hold on;
 scatter(ConvLin_data(2:end,1), ConvLin_data(2:end,3));
 legend('A_{11}','A_{12}');
-title('Sequence of linear convergence rates for A_{11} and A_{12} for symmetric {\Sigma}_x');
+title('Sequence of linear convergence rates for A_{11} and A_{12} for diagonal {\Sigma}_x');
 xlabel('number of data points observed');
 ylabel('(linear) convergence ratio');
 str = sprintf('conv_lin_11_%dsamples_sym.png',m);
@@ -852,7 +922,7 @@ figure;
 scatter(ConvQuad_data(2:end,1), ConvQuad_data(2:end,2));
 hold on;
 scatter(ConvQuad_data(2:end,1), ConvQuad_data(2:end,3));
-title('Sequence of linear convergence rates for A_{11} and A_{12} for symmetric {\Sigma}_x');
+title('Sequence of linear convergence rates for A_{11} and A_{12} for diagonal {\Sigma}_x');
 xlabel('number of data points observed');
 ylabel('(quadratic) convergence ratio');
 legend('A_{11}','A_{12}');
@@ -876,7 +946,7 @@ scatter(FiltConvLin_data1(2:end,1), FiltConvLin_data1(2:end,2));
 hold on;
 scatter(FiltConvLin_data2(2:end,1), FiltConvLin_data2(2:end,2));
 legend('A_{11}','A_{12}');
-title('Filtered sequence of linear convergence rates for A_{11} and A_{12} for non-symmetric {\Sigma}_x');
+title('Filtered sequence of linear convergence rates for A_{11} and A_{12} for non-diagonal {\Sigma}_x');
 xlabel('number of data points observed');
 ylabel('(linear) convergence ratio');
 str = sprintf('conv_filt_lin_%dsamples_nosym.png',m);
@@ -889,7 +959,7 @@ scatter(FiltConvQuad_data1(2:end,1), FiltConvQuad_data1(2:end,2));
 hold on;
 scatter(FiltConvQuad_data2(2:end,1), FiltConvQuad_data2(2:end,2));
 legend('A_{11}','A_{12}');
-title('Filtered sequence of quadratic convergence rates for A_{11} and A_{12} for non-symmetric {\Sigma}_x');
+title('Filtered sequence of quadratic convergence rates for A_{11} and A_{12} for non-diagonal {\Sigma}_x');
 xlabel('number of data points observed');
 ylabel('(quadratic) convergence ratio');
 str = sprintf('conv_filt_quad_%dsamples_nosym.png',m);
@@ -901,7 +971,7 @@ scatter(ConvLin_data(2:end,1), ConvLin_data(2:end,2));
 hold on;
 scatter(ConvLin_data(2:end,1), ConvLin_data(2:end,3));
 legend('A_{11}','A_{12}');
-title('Sequence of linear convergence rates for A_{11} and A_{12} for non-symmetric {\Sigma}_x');
+title('Sequence of linear convergence rates for A_{11} and A_{12} for non-diagonal {\Sigma}_x');
 xlabel('number of data points observed');
 ylabel('(linear) convergence ratio');
 str = sprintf('conv_lin_11_%dsamples_nosym.png',m);
@@ -912,7 +982,7 @@ figure;
 scatter(ConvQuad_data(2:end,1), ConvQuad_data(2:end,2));
 hold on;
 scatter(ConvQuad_data(2:end,1), ConvQuad_data(2:end,3));
-title('Sequence of linear convergence rates for A_{11} and A_{12} for non-symmetric {\Sigma}_x');
+title('Sequence of linear convergence rates for A_{11} and A_{12} for non-diagonal {\Sigma}_x');
 xlabel('number of data points observed');
 ylabel('(quadratic) convergence ratio');
 legend('A_{11}','A_{12}');
